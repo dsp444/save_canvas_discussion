@@ -1,5 +1,5 @@
 #######################
-# Script that will convert discussion posts from Canvas and save them to files.
+# Script that will convert discussion posts from Canvas LMS and save them to files.
 # Canvas allows you to download all submissions to assignments, but there is no way
 # to do the same thing with discussion posts.  However, the data is available in JSON format,
 # it just needs parsed into readable files.  This script will parse the data and save it into
@@ -11,8 +11,9 @@
 # cannot get the data directly from the Canvas website, you have to download it into a text file first.
 #
 # The script can be run 2 ways - with 2 different types of inputs:
-#   1) Give it a course ID and discussion ID - the script will tell you the web address to use to get
-#      your discussion posts.  Copy and paste this address into a browser and save the results as a file.
+#   1) Give it 3 arguments: an institution name, course ID, and discussion ID.  If the script detects these inputs,
+#      it will report the web address to use to get your discussion posts. Copy and paste this address into 
+#      a browser and save the results as a file.
 #   2) Once you have the posts saved as a file, run this script with a filename as the argument and it will
 #      process the file and save the posts into individual HTML files.
 # 
@@ -23,7 +24,8 @@
 import sys,json,os
 
 OUT=sys.stdout.write
-CANVAS_URL = 'https://utexas.instructure.com/api/v1/courses/%s/discussion_topics/%s/view?include_new_entries=1&include_enrollment_state=1'
+
+CANVAS_URL = 'https://%s.instructure.com/api/v1/courses/%s/discussion_topics/%s/view?include_new_entries=1&include_enrollment_state=1'
 PYTHON_VER = 3
 
 #######################
@@ -126,15 +128,16 @@ def get_discussion_posts( fname ):
 # The usage function just shows how to run the program
 #
 def usage():
-    OUT( '\nCanvas discussion thread reader\n\n' )
-    OUT( ' usage: get_canvas_discussion.py COURSE_ID DISCUSSION_ID\n' )
-    OUT( '    or: get_canvas_discussion.py filename\n\n')
+    OUT( '\nCanvas discussion thread saver\n\n' )
+    OUT( ' usage: save_canvas_discussion.py INSTITUTION COURSE_ID DISCUSSION_ID\n' )
+    OUT( '    or: save_canvas_discussion.py FILENAME\n\n')
     OUT( '   The COURSE_ID and DISCUSSION_ID can be found on the URL for the Canvas discussion thread.\n' )
     OUT( '   For example: https://utexas.instructure.com/courses/1213320/discussion_topics/2926596\n' )
-    OUT( '   The COURSE_ID is 122332 and the DISCUSSION_ID is 2926596.\n\n' )
-    OUT( '   If the script is run with the COURSE_ID and DISCUSSION_ID, it will simply tell you the web address\n' )
-    OUT( '   to use to download you discussion posts from Canvas.\n\n') 
-    OUT( '   If the script is run with a filename, it will read the file and save posts for each student\n' )
+    OUT( '   The COURSE_ID is 122332 and the DISCUSSION_ID is 2926596 and you would run the script with the command:\n' )
+    OUT( '   > save_canvas_discussion.py utexas 122332 2926596\n\n')    	
+    OUT( '   If the script is run as above, it will simply return the web address to use to display the discussion\n' )
+    OUT( '   posts in JSON formatted file from Canvas.  Save this on your computer as a file for the next step.\n\n') 
+    OUT( '   If the script is run with the filename that you saved from the previous step, it will save posts for each student\n' )
     OUT( '   in the current directory as an html file. Each students posts will be saved as a different html file\n' )
     OUT( '   and multiple posts from the same student will appear in a single html file for that student.\n\n' )
 #
@@ -151,18 +154,19 @@ if __name__ == '__main__':
 
 # If there isn't 3 command line arguments (get_canvas_discussion.py COURSE_ID DISCUSSION_ID), then 
 # display the instructions of how to use this program.
-    if len(sys.argv) != 3 and len(sys.argv) != 2:
+    if len(sys.argv) != 4 and len(sys.argv) != 2:
         usage()
         sys.exit(1)
 
 # Collect input data from command line and pass that to the get_discussion_posts() function
-    if len(sys.argv) == 3:
-        course_id = sys.argv[1]
-        discussion_id = sys.argv[2]
+    if len(sys.argv) == 4:
+    	institute = sys.argv[1]
+        course_id = sys.argv[2]
+        discussion_id = sys.argv[3]
         OUT( '\nCopy and paste this URL into your browser to show all discussion posts into JSON format.\n ')
         OUT( 'Once you can see the JSON text in your browser, save it as a file on you computer to process\n ')
         OUT( 'using this program with the file name as the command line input.\n' )
-        address = CANVAS_URL % ( course_id, discussion_id )
+        address = CANVAS_URL % ( institute, course_id, discussion_id )
         OUT( '%s\n\n' % address )
     else:
         get_discussion_posts( sys.argv[1] )
