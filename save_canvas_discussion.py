@@ -18,14 +18,17 @@
 #      process the file and save the posts into individual HTML files.
 # 
 #
-# Version 1.0    Dan Puperi    3/22/2018
+# Version 1.0    Dan Puperi    5/11/2018
 # 
 #
 import sys,json,os
 
 OUT=sys.stdout.write
 
+# URL of Canvas API to download JSON formatted discussions
 CANVAS_URL = 'https://%s.instructure.com/api/v1/courses/%s/discussion_topics/%s/view?include_new_entries=1&include_enrollment_state=1'
+
+# Default is Python 3 until this script detects otherwise
 PYTHON_VER = 3
 
 #######################
@@ -37,6 +40,8 @@ def write_post_to_file( path, name, id, post, date, title="Discussion Posts" ):
 
 #     Set the file name
     fname = path + '/' + name.strip().replace(' ','_').replace("'",'') + '_' + str(id) + '.html'
+
+#     If file already exists, append a new box with second discussion post
     if os.path.exists( fname ):
         with open( fname, 'r') as file:
 
@@ -59,7 +64,7 @@ def write_post_to_file( path, name, id, post, date, title="Discussion Posts" ):
             file.write( '</html>\n' )
     else:
 
-#     Create a new file - simple HTML file with the discussion post.
+#     If file does not exist, create a new file - simple HTML file with the discussion post.
         with open( fname, 'w' ) as file:
             file.write( '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"\n' )
             file.write( '          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n' )
@@ -117,8 +122,9 @@ def get_discussion_posts( fname ):
 #     If find a match, write it to a file.
         message = '' 
         for post in data['view']:
-            if post['user_id'] == id:
-                write_post_to_file( os.path.dirname( fname ), name, id, post['message'], post['updated_at'], os.path.basename( fname ).split('.')[0] )
+            if 'user_id' in post.keys():
+                if post['user_id'] == id:
+                    write_post_to_file( os.path.dirname( fname ), name, id, post['message'], post['updated_at'], os.path.basename( fname ).split('.')[0] )
 #
 # End of get_discussion_posts()
 #######################
@@ -160,7 +166,7 @@ if __name__ == '__main__':
 
 # Collect input data from command line and pass that to the get_discussion_posts() function
     if len(sys.argv) == 4:
-    	institute = sys.argv[1]
+        institute = sys.argv[1]
         course_id = sys.argv[2]
         discussion_id = sys.argv[3]
         OUT( '\nCopy and paste this URL into your browser to show all discussion posts into JSON format.\n ')
