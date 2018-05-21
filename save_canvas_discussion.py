@@ -95,7 +95,6 @@ def write_post_to_file( path, name, id, post, date, title="Discussion Posts" ):
 # Call write_post_to_file function to actually create the files from the JSON data.
 #
 def get_discussion_posts( fname ):
-    print( os.path.dirname(fname) )
 #     Open the file - different ways for Python 2 versus 3
     if PYTHON_VER == 3:
         with open( fname, 'r', encoding='utf8' ) as file:
