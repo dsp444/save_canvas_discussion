@@ -19,6 +19,9 @@
 # 
 #
 # Version 1.0    Dan Puperi    5/11/2018
+# Version 1.01   Dan Puperi    11/1/2018 
+#    - fixed file write error (because it tried to write to root dir) when path of input .json file
+#      wasn't provided by the user
 # 
 #
 import sys,json,os
@@ -37,6 +40,7 @@ PYTHON_VER = 3
 # If file exists, append the new post to the end of the file.
 #
 def write_post_to_file( path, name, id, post, date, title="Discussion Posts" ):
+    if path == '': path = '.'
 
 #     Set the file name
     fname = path + '/' + name.strip().replace(' ','_').replace("'",'') + '_' + str(id) + '.html'
@@ -105,9 +109,9 @@ def get_discussion_posts( fname ):
 
 #     If the file starts with a "while(1);", remove it from the text.    
     if file_text[0] == 'w':
-    	text_to_convert = file_text.encode( 'utf8' ).decode( 'ascii', 'ignore' )[9:]
+        text_to_convert = file_text.encode( 'utf8' ).decode( 'ascii', 'ignore' )[9:]
     else:
-    	text_to_convert = file_text.encode( 'utf8' ).decode( 'ascii', 'ignore' )
+        text_to_convert = file_text.encode( 'utf8' ).decode( 'ascii', 'ignore' )
 
 #     Use the json module to read the text into JSON format
     data = json.loads( text_to_convert )
@@ -139,7 +143,7 @@ def usage():
     OUT( '   The COURSE_ID and DISCUSSION_ID can be found on the URL for the Canvas discussion thread.\n' )
     OUT( '   For example: https://utexas.instructure.com/courses/1213320/discussion_topics/2926596\n' )
     OUT( '   The COURSE_ID is 122332 and the DISCUSSION_ID is 2926596 and you would run the script with the command:\n' )
-    OUT( '   > save_canvas_discussion.py utexas 122332 2926596\n\n')    	
+    OUT( '   > save_canvas_discussion.py utexas 122332 2926596\n\n')        
     OUT( '   If the script is run as above, it will simply return the web address to use to display the discussion\n' )
     OUT( '   posts in JSON formatted file from Canvas.  Save this on your computer as a file for the next step.\n\n') 
     OUT( '   If the script is run with the filename that you saved from the previous step, it will save posts for each student\n' )
