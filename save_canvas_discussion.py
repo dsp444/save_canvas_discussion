@@ -39,7 +39,7 @@ PYTHON_VER = 3
 # The format of the file is the same to the HTML files from downloaded text entry assingments on Canvas
 # If file exists, append the new post to the end of the file.
 #
-def write_post_to_file( path, name, id, post, date, title="Discussion Posts" ):
+def write_post_to_file( path, name, id, post, date, id_to_name, title="Discussion Posts", replies={} ):
     if path == '': path = '.'
 
 #     Set the file name
@@ -63,9 +63,6 @@ def write_post_to_file( path, name, id, post, date, title="Discussion Posts" ):
             file.write( '<div style="width: 600px; margin: 20px auto; border: 1px solid #888; padding: 20px;">\n' )
             file.write( date + '\n' )
             file.write( post.encode( 'utf8' ).decode( 'ascii', 'ignore' ) + '\n' )
-            file.write( '</div>\n' )
-            file.write( '</body>\n' )
-            file.write( '</html>\n' )
     else:
 
 #     If file does not exist, create a new file - simple HTML file with the discussion post.
@@ -82,13 +79,56 @@ def write_post_to_file( path, name, id, post, date, title="Discussion Posts" ):
             file.write( '<div style="width: 600px; margin: 20px auto; border: 1px solid #888; padding: 20px;">\n' )
             file.write( date + '\n' )
             file.write( post.encode( 'utf8' ).decode( 'ascii', 'ignore' ) + '\n' )
-            file.write( '</div>\n' )
-            file.write( '</body>\n' )
-            file.write( '</html>\n' )
+
+#   if the post has replies, write those to the file as well.
+    if replies:
+        write_replies_to_file( path, name, id, replies, id_to_name, 600 )
+
+#   finally, close the <div>, <body>, and <html> tags
+    with open( fname, 'a+' ) as file:
+        file.write( '</div>\n' )
+        file.write( '</body>\n' )
+        file.write( '</html>\n' )
 #
 # End of write_post_to_file()
 #######################
 
+#######################
+# include replies to a post along with that post.
+# called either from write_post_to_file or recursively.
+def write_replies_to_file( path, name, id, replies, id_to_name, width ):
+    
+#   Set the path to current directory if it's empty.
+    if path == '': path = '.'
+
+#   Set the file name
+    fname = path + '/' + name.strip().replace(' ','_').replace("'",'') + '_' + str(id) + '.html'
+
+#   decrement the width by 40 pixels to thread comments
+    width = width - 40
+
+#   loop through each reply
+    for reply in replies:
+
+#       write the reply to the file.
+        with open( fname, 'a+') as file:
+            file.write( '<br>\n')
+            file.write( '<div style="width: %spx; margin: 5px auto; border: 1px solid #888; padding: 20px;">\n' % width )
+            file.write( '<strong>' + id_to_name[reply['user_id']] + '</strong>\n' )
+            file.write( reply['updated_at'] + '\n' )
+            file.write( reply['message'].encode( 'utf8' ).decode( 'ascii', 'ignore' ) + '\n' )
+
+#       if there are threaded replies, recursively write those as well.
+        if 'replies' in reply.keys():
+            write_replies_to_file( path, name, id, reply['replies'], id_to_name, width )
+
+#       close the reply's <div>
+        with open( fname, 'a+') as file:
+            file.write( '</div>\n')
+
+#
+# End of write_replies_to_file
+#######################
 
 #######################
 # Get the discussion posts from the Canvas API website
@@ -99,7 +139,7 @@ def write_post_to_file( path, name, id, post, date, title="Discussion Posts" ):
 # Call write_post_to_file function to actually create the files from the JSON data.
 #
 def get_discussion_posts( fname ):
-#     Open the file - different ways for Python 2 versus 3
+#   Open the file - different ways for Python 2 versus 3
     if PYTHON_VER == 3:
         with open( fname, 'r', encoding='utf8' ) as file:
             file_text = file.read()
@@ -107,16 +147,21 @@ def get_discussion_posts( fname ):
         with open( fname ) as file:
             file_text = file.read().decode( 'utf8' )
 
-#     If the file starts with a "while(1);", remove it from the text.    
+#   If the file starts with a "while(1);", remove it from the text.    
     if file_text[0] == 'w':
         text_to_convert = file_text.encode( 'utf8' ).decode( 'ascii', 'ignore' )[9:]
     else:
         text_to_convert = file_text.encode( 'utf8' ).decode( 'ascii', 'ignore' )
 
-#     Use the json module to read the text into JSON format
+#   Use the json module to read the text into JSON format
     data = json.loads( text_to_convert )
 
-#     Loop through all participants and get name and ids of students
+#   create a dictionary that maps IDs to names; needed for replies.
+    id_to_name = {}
+    for student in data['participants']:
+        id_to_name[student['id']] = student['display_name']
+
+#   Loop through all participants and get name and ids of students
     for student in data['participants']:
         id = student['id']
         name = student['display_name']
@@ -126,8 +171,11 @@ def get_discussion_posts( fname ):
         message = '' 
         for post in data['view']:
             if 'user_id' in post.keys():
+                replies = {}
+                if 'replies' in post.keys():
+                    replies = post['replies']
                 if post['user_id'] == id:
-                    write_post_to_file( os.path.dirname( fname ), name, id, post['message'], post['updated_at'], os.path.basename( fname ).split('.')[0] )
+                    write_post_to_file( os.path.dirname( fname ), name, id, post['message'], post['updated_at'], id_to_name, os.path.basename( fname ).split('.')[0], replies )
 #
 # End of get_discussion_posts()
 #######################
