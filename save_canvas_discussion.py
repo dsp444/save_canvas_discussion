@@ -22,6 +22,11 @@
 # Version 1.01   Dan Puperi    11/1/2018 
 #    - fixed file write error (because it tried to write to root dir) when path of input .json file
 #      wasn't provided by the user
+# Version 1.1    Seth Wilson   12/14/2018
+#    - recursively reads through the 'replies' field of each post and adds them to the HTML output.
+# Version 1.11   Dan Puperi    12/17/2018
+#    - update to recording replies. Made it optional by setting a flag (default = True).  Reduced
+#      arguments to write_replies_to_html function. Also created a global WIDTH variable.
 # 
 #
 import sys,json,os
@@ -33,6 +38,13 @@ CANVAS_URL = 'https://%s.instructure.com/api/v1/courses/%s/discussion_topics/%s/
 
 # Default is Python 3 until this script detects otherwise
 PYTHON_VER = 3
+
+# Set to true in order to recursively write replies to the HTML files
+# It may be helpful to set this to False if checking for plagiarism
+INCLUDE_REPLIES = True
+
+# Set the width of the discussion post boxes
+WIDTH = 600
 
 #######################
 # Write each post to an individual html file.
@@ -60,7 +72,7 @@ def write_post_to_file( path, name, id, post, date, id_to_name, title="Discussio
 
 #     Now write a line break and the new post in its own div box
             file.write( '<br>\n')
-            file.write( '<div style="width: 600px; margin: 20px auto; border: 1px solid #888; padding: 20px;">\n' )
+            file.write( '<div style="width: %spx; margin: 20px auto; border: 1px solid #888; padding: 20px;">\n' % WIDTH )
             file.write( date + '\n' )
             file.write( post.encode( 'utf8' ).decode( 'ascii', 'ignore' ) + '\n' )
     else:
@@ -76,13 +88,13 @@ def write_post_to_file( path, name, id, post, date, id_to_name, title="Discussio
             file.write( '</head>\n' )
             file.write( '<body>\n' )
             file.write( '<h1>%s: %s</h1>\n' % (title,name) )
-            file.write( '<div style="width: 600px; margin: 20px auto; border: 1px solid #888; padding: 20px;">\n' )
+            file.write( '<div style="width: %spx; margin: 20px auto; border: 1px solid #888; padding: 20px;">\n' % WIDTH )
             file.write( date + '\n' )
             file.write( post.encode( 'utf8' ).decode( 'ascii', 'ignore' ) + '\n' )
 
 #   if the post has replies, write those to the file as well.
-    if replies:
-        write_replies_to_file( path, name, id, replies, id_to_name, 600 )
+    if replies and INCLUDE_REPLIES:
+        write_replies_to_file( fname, id, replies, id_to_name, WIDTH )
 
 #   finally, close the <div>, <body>, and <html> tags
     with open( fname, 'a+' ) as file:
@@ -96,14 +108,8 @@ def write_post_to_file( path, name, id, post, date, id_to_name, title="Discussio
 #######################
 # include replies to a post along with that post.
 # called either from write_post_to_file or recursively.
-def write_replies_to_file( path, name, id, replies, id_to_name, width ):
+def write_replies_to_file( fname, id, replies, id_to_name, width ):
     
-#   Set the path to current directory if it's empty.
-    if path == '': path = '.'
-
-#   Set the file name
-    fname = path + '/' + name.strip().replace(' ','_').replace("'",'') + '_' + str(id) + '.html'
-
 #   decrement the width by 40 pixels to thread comments
     width = width - 40
 
@@ -125,7 +131,6 @@ def write_replies_to_file( path, name, id, replies, id_to_name, width ):
 #       close the reply's <div>
         with open( fname, 'a+') as file:
             file.write( '</div>\n')
-
 #
 # End of write_replies_to_file
 #######################
@@ -209,7 +214,7 @@ if __name__ == '__main__':
     if sys.version_info[0] < 3:
         PYTHON_VER = 2
 
-# If there isn't 3 command line arguments (get_canvas_discussion.py COURSE_ID DISCUSSION_ID), then 
+# If there isn't 4 command line arguments (get_canvas_discussion.py INSTITUTION COURSE_ID DISCUSSION_ID), then 
 # display the instructions of how to use this program.
     if len(sys.argv) != 4 and len(sys.argv) != 2:
         usage()
