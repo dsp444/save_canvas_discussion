@@ -27,6 +27,8 @@
 # Version 1.11   Dan Puperi    12/17/2018
 #    - update to recording replies. Made it optional by setting a flag (default = True).  Reduced
 #      arguments to write_replies_to_html function. Also created a global WIDTH variable.
+# Version 1.12   Dan Puperi    01/03/2019
+#    - fix error with replies to replies (not passing correct argument to recall of function)
 # 
 #
 import sys,json,os
@@ -126,7 +128,7 @@ def write_replies_to_file( fname, id, replies, id_to_name, width ):
 
 #       if there are threaded replies, recursively write those as well.
         if 'replies' in reply.keys():
-            write_replies_to_file( path, name, id, reply['replies'], id_to_name, width )
+            write_replies_to_file( fname, id, reply['replies'], id_to_name, width )
 
 #       close the reply's <div>
         with open( fname, 'a+') as file:
