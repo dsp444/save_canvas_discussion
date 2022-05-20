@@ -118,21 +118,24 @@ def write_replies_to_file( fname, id, replies, id_to_name, width ):
 #   loop through each reply
     for reply in replies:
 
-#       write the reply to the file.
-        with open( fname, 'a+') as file:
-            file.write( '<br>\n')
-            file.write( '<div style="width: %spx; margin: 5px auto; border: 1px solid #888; padding: 20px;">\n' % width )
-            file.write( '<strong>' + id_to_name[reply['user_id']] + '</strong>\n' )
-            file.write( reply['updated_at'] + '\n' )
-            file.write( reply['message'].encode( 'utf8' ).decode( 'ascii', 'ignore' ) + '\n' )
+#       ignore deleted reply:
+        if not 'deleted' in reply:
+        
+#           write the reply to the file.
+            with open( fname, 'a+') as file:
+                file.write( '<br>\n')
+                file.write( '<div style="width: %spx; margin: 5px auto; border: 1px solid #888; padding: 20px;">\n' % width )
+                file.write( '<strong>' + id_to_name[reply['user_id']] + '</strong>\n' )
+                file.write( reply['updated_at'] + '\n' )
+                file.write( reply['message'].encode( 'utf8' ).decode( 'ascii', 'ignore' ) + '\n' )
 
-#       if there are threaded replies, recursively write those as well.
-        if 'replies' in reply.keys():
-            write_replies_to_file( fname, id, reply['replies'], id_to_name, width )
+#           if there are threaded replies, recursively write those as well.
+            if 'replies' in reply.keys():
+                write_replies_to_file( fname, id, reply['replies'], id_to_name, width )
 
-#       close the reply's <div>
-        with open( fname, 'a+') as file:
-            file.write( '</div>\n')
+#           close the reply's <div>
+            with open( fname, 'a+') as file:
+                file.write( '</div>\n')
 #
 # End of write_replies_to_file
 #######################
